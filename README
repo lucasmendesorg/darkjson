@@ -1,0 +1,40 @@
+DarkJSON - JSON for C
+	(c) 2020 Lucas Mendes <lucas@lucasmendes.org>
+	
+First release: Sun Jun  7 05:10:05 -03 2020
+
+A árvore de tokens é organizada em Token * p/ STRING e NUMBER,
+definido em token->Type, sendo token->value o conteúdo do token e
+token->next = NULL (STRING e NUMBER não são containers, como
+ARRAY e DICTIONARY; logo, *next = NULL).
+
+token->down aponta para a próxima linha (horizontal), sendo outro
+field do data model, completamente independente do anterior.
+
+Ex.:
+	Token {
+		.down = próximo-campo-do-modelo
+		.up = ARRAY || DICTIONARY || NULL-se-for-filho-de-TokenTree,
+		.NextArray = NULL,
+		.NextDictionary = NULL,
+		.type = STRING || NUMBER,
+		value = "..."
+	}
+
+Para ARRAY, *NextArray aponta para os membros do array, seguindo o
+modelo padrão para STRING e NUMBER. Chamamos isso de colunas.
+
+Para DICTIONARY, *NextDictionary aponta para os membros do dictionary,
+tratados em pares (key + value), sendo "key" sempre STRING e
+"value" podendo ser STRING ou NUMBER. Chamamos isso de colunas.
+
+Ex. com *Down e *next:
+	0: Token { STRING }
+	1: Token { NUMBER }
+	2: Token { STRING }
+	3: Token { STRING }
+	4: Token { ARRAY } -> Token { STRING } -> Token { NUMBER } -> ...
+	5: Token { ARRAY } -> Token { NUMBER } -> Token { NUMBER } -> ...
+	6: Token { ARRAY } -> Token { STRING } -> Token { STRING } -> ...
+
+						-lucas

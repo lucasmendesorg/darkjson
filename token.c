@@ -1,4 +1,11 @@
 /*
+	DarkJSON - JSON for C
+		(c) 2020 Lucas Mendes <lucas@lucasmendes.org>
+	
+	First release: Sun Jun  7 05:10:05 -03 2020
+*/
+
+/*
 	A árvore de tokens é organizada em Token * p/ STRING e NUMBER,
 	definido em token->type, sendo token->value o conteúdo do token e
 	token->next = NULL (STRING e NUMBER não são containers, como
@@ -37,6 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #define MYSELF			__FUNCTION__
 
@@ -63,6 +71,7 @@ typedef struct TokenTree {
 	struct Token *last;
 } TokenTree;
 
+#ifdef DEBUG
 int debugf(const char *who, const char *fmt, ...) {
 	va_list args;
 	char buffer[4096];
@@ -72,6 +81,9 @@ int debugf(const char *who, const char *fmt, ...) {
 	if(!who) who = "";
 	return fprintf(stderr, "%24s - %s\n", who, buffer);
 }
+#else
+#define debugf(...)
+#endif
 
 // Insere uma nova linha (verticalmente/token->down) no final de *tree
 Token *AppendToTokenTree(TokenTree *tree, Token *token) {
@@ -128,9 +140,15 @@ Token *CreateToken(char *value, int type) {
 		return aux;
 	}
 	aux->up = aux->down = aux->arrayNext = aux->dictionaryNext = NULL;
-	aux->value = value;
+	aux->value = (char *) malloc(strlen(value) + 1);
+	if(!aux->value) {
+		free(aux);
+		debugf(MYSELF, "Cannot alloc value for new token");
+		return NULL;
+	}
+	strcpy(aux->value, value);
 	aux->type = type;
-//	debugf(MYSELF, "New %s '%s'", TokenType[type], value);
+	debugf(MYSELF, "New %s '%s'", TokenType[type], value);
 	return aux;
 }
 
@@ -157,20 +175,10 @@ void SerializeToken(Token *t, int order) {
 	int shouldClose = 0;
 	switch (t->type) {
 		case TOKEN_TYPE_ARRAY:
-//			if(t->up) {
-//				if(t->up->type != TOKEN_TYPE_ARRAY) {
-//					printf("'%s': ", t->value);
-//				}
-//			}
 			printf("[ ");
 			shouldClose = SERIALIZE_SHOULD_CLOSE_ARRAY;
 			break;
 		case TOKEN_TYPE_DICTIONARY:
-//			if(t->up) {
-//				if(t->up->type != TOKEN_TYPE_ARRAY) {
-//					printf("'%s': ", t->value);
-//				}
-//			}
 			printf("{ ");
 			shouldClose = SERIALIZE_SHOULD_CLOSE_DICTIONARY;
 			break;
@@ -180,22 +188,18 @@ void SerializeToken(Token *t, int order) {
 					printf("'%s': ", t->value);
 					order = 1;
 				} else {
-					printf("'%s', ", t->value);
+					if(t->type == TOKEN_TYPE_NUMBER) printf("%s, ", t->value);
+					else printf("'%s', ", t->value);
 					order = 0;
 				}
 			} else {
-				printf("'%s', ", t->value);
+				if(t->type == TOKEN_TYPE_NUMBER) printf("%s, ", t->value);
+				else printf("'%s', ", t->value);
 			}
 			break;
 	}
-//	if(shouldClose == SERIALIZE_SHOULD_CLOSE_ARRAY) printf("], ");
-//	if(shouldClose == SERIALIZE_SHOULD_CLOSE_DICTIONARY) printf("}, ");
-//	if(t->dictionaryNext) SerializeToken(t->dictionaryNext, order);
-//	if(t->arrayNext) SerializeToken(t->arrayNext, order);
-
 	if(t->dictionaryNext) SerializeToken(t->dictionaryNext, order);
 	if(shouldClose == SERIALIZE_SHOULD_CLOSE_DICTIONARY) printf("}, ");
-	
 	if(t->arrayNext) SerializeToken(t->arrayNext, order);
 	if(shouldClose == SERIALIZE_SHOULD_CLOSE_ARRAY) printf("], ");
 }
@@ -222,6 +226,7 @@ int main1() {
 	AppendTokenToDictionary(array0, CreateToken("lastname", TOKEN_TYPE_STRING));
 	AppendTokenToDictionary(array0, CreateToken("email", TOKEN_TYPE_STRING));
 
+	DumpTokenTree(tree);
 	SerializeTokenTree(tree);
 	return 0;
 }
@@ -237,6 +242,7 @@ int main2() {
 	AppendTokenToDictionary(array0, CreateToken("lastname", TOKEN_TYPE_STRING));
 	AppendTokenToDictionary(array0, CreateToken("email", TOKEN_TYPE_STRING));
 
+	DumpTokenTree(tree);
 	SerializeTokenTree(tree);
 	return 0;
 }
@@ -260,12 +266,12 @@ int main3() {
 	AppendTokenToDictionary(dict1, CreateToken("pair2", TOKEN_TYPE_STRING));
 	AppendTokenToArray(array1, dict1);
 
-	//DumpTokenTree(tree);
+	DumpTokenTree(tree);
 	SerializeTokenTree(tree);
 	return 0;
 }
 
-int main() {
+int main4() {
 	TokenTree *tree = CreateTokenTree();
 
 	Token *array0 = CreateToken("array0", TOKEN_TYPE_ARRAY);
@@ -277,10 +283,10 @@ int main() {
 	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
 	AppendTokenToArray(array0, dict0);
 
-	AppendTokenToDictionary(dict0, CreateToken("username", TOKEN_TYPE_STRING));
-	AppendTokenToDictionary(dict0, CreateToken("firstname", TOKEN_TYPE_STRING));
-	AppendTokenToDictionary(dict0, CreateToken("lastname", TOKEN_TYPE_STRING));
-	AppendTokenToDictionary(dict0, CreateToken("email", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("description", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("On the turning away", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("price", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("9.90", TOKEN_TYPE_NUMBER));
 
 	Token *wish = CreateToken("Wish you were here", TOKEN_TYPE_STRING);
 	AppendTokenToArray(array0, wish);
@@ -289,7 +295,6 @@ int main() {
 	AppendTokenToDictionary(dict0, key);
 	Token *array1 = CreateToken("array1", TOKEN_TYPE_ARRAY);
 	AppendTokenToDictionary(dict0, array1);
-	//AppendTokenToArray(array0, array1);
 	
 	Token *gilmour = CreateToken("David Gilmour", TOKEN_TYPE_STRING);
 	AppendTokenToArray(array1, gilmour);
@@ -297,6 +302,62 @@ int main() {
 	Token *waters = CreateToken("Roger Waters", TOKEN_TYPE_STRING);
 	AppendTokenToArray(array1, waters);
 
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
+	return 0;
+}
+
+Token *Number_Create(double value) {
+	char buffer[512];
+	snprintf(buffer, sizeof(buffer), "%f", value);
+	return CreateToken(buffer, TOKEN_TYPE_NUMBER);
+}
+
+Token *String_Create(char *value) {
+	return CreateToken(value, TOKEN_TYPE_STRING);
+}
+
+Token *Dictionary_AppendDictionary(Token *dictionary, char *key, Token *token) {
+	AppendTokenToDictionary(dictionary, String_Create(key));
+	AppendTokenToDictionary(dictionary, token);
+	return dictionary;
+}
+
+Token *Dictionary_AppendArray(Token *dictionary, char *key, Token *array) {
+	AppendTokenToDictionary(dictionary, String_Create(key));
+	AppendTokenToDictionary(dictionary, array);
+	return dictionary;
+}
+
+Token *Dictionary_AppendNumber(Token *dictionary, char *key, double number) {
+	AppendTokenToDictionary(dictionary, String_Create(key));
+	AppendTokenToDictionary(dictionary, Number_Create(number));
+	return dictionary;
+}
+
+Token *Dictionary_AppendString(Token *dictionary, char *key, char *pair) {
+	AppendTokenToDictionary(dictionary, String_Create(key));
+	AppendTokenToDictionary(dictionary, String_Create(pair));
+	return dictionary;
+}
+
+Token *Dictionary_Create(char *name) {
+	return CreateToken(name, TOKEN_TYPE_DICTIONARY);
+}
+
+Token *Array_Create(char *name) {
+	return CreateToken(name, TOKEN_TYPE_ARRAY);
+}
+
+int main() {
+	TokenTree *tree = CreateTokenTree();
+	
+	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
+	AppendToTokenTree(tree, dict0);
+	
+	Dictionary_AppendString(dict0, "description", "candy bar");
+	Dictionary_AppendNumber(dict0, "price", 4.99);
+	
 	DumpTokenTree(tree);
 	SerializeTokenTree(tree);
 	return 0;

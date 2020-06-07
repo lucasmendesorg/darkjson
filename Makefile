@@ -2,7 +2,7 @@
      RM	= rm -Rf
 
 #CFLAGS	= -O3 -Wall -funroll-loops -I.
- CFLAGS	= -Wall -I.
+ CFLAGS	= -Wall -I. -DDEBUG
 LDFLAGS	= 
 
    OBJS	= token.o #debug.o #main.o
