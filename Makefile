@@ -5,7 +5,7 @@
  CFLAGS	= -Wall -I.
 LDFLAGS	= 
 
-   OBJS	= token.o debug.o #main.o
+   OBJS	= token.o #debug.o #main.o
    AOUT	= darkjson
 
 all: $(OBJS)
