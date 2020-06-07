@@ -1,11 +1,10 @@
      CC	= cc
      RM	= rm -Rf
 
-#CFLAGS	= -O3 -Wall -funroll-loops -I.
- CFLAGS	= -Wall -I. -DDEBUG
+CFLAGS	= -O3 -Wall -funroll-loops -I. -DDEBUG
 LDFLAGS	= 
 
-   OBJS	= token.o #debug.o #main.o
+   OBJS	= token.o tokentree.o tokentype.o dump.o data.o serialization.o debug.o main.o
    AOUT	= darkjson
 
 all: $(OBJS)

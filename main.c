@@ -1,75 +1,115 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
+/*
+	DarkJSON - JSON for C
+		(c) 2020 Lucas Mendes <lucas@lucasmendes.org>
+*/
 
-#define JSON_NULL	0
-#define JSON_STRING	1
-#define JSON_ARRAY	2
+#include <darkjson.h>
 
-typedef struct JSON {
-	struct JSON *next;
-	int type;
-	void *ptr;
-} JSON;
+void test1() {
+	TokenTree *tree = CreateTokenTree();
 
+	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
+	AppendToTokenTree(tree, dict0);
 
-JSON *InsertJSON(JSON *parent, JSON *node) {
-	node->next = parent->next;
-	parent->next = node;
-	return parent;
+	Token *array0 = CreateToken("array0", TOKEN_TYPE_ARRAY);
+	AppendTokenToDictionary(dict0, array0);
+
+	AppendTokenToDictionary(array0, CreateToken("username", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("firstname", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("lastname", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("email", TOKEN_TYPE_STRING));
+
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
 }
 
-JSON *CreateJSON(int type, void *ptr) {
-	JSON *aux = (JSON *) malloc(sizeof(*aux));
-	if(!aux) return aux;
-	aux->next = NULL;
-	aux->type = type;
-	aux->ptr = ptr;
-	return aux;
+void test2() {
+	TokenTree *tree = CreateTokenTree();
+
+	Token *array0 = CreateToken("array0", TOKEN_TYPE_ARRAY);
+	AppendToTokenTree(tree, array0);
+
+	AppendTokenToDictionary(array0, CreateToken("username", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("firstname", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("lastname", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(array0, CreateToken("email", TOKEN_TYPE_STRING));
+
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
 }
 
-JSON *ReadJSON(char *jsonText) {
-	JSON *aux = CreateJSON(JSON_NULL, NULL);
-	if(!aux) return aux;
-	for(; *jsonText; ++jsonText) {
-		if(*jsonText == '[') {
-			aux->type = JSON_ARRAY;
-			while(*jsonText != ']') {
-				++jsonText;
-				while(*jsonText == ' ') ++jsonText;
-				{
-					char *jsonStringEnd = jsonText + 1;
-					
-					while(*jsonStringEnd != '\'') ++jsonStringEnd;
-					
-					int jsonPtrSize = (int) (jsonStringEnd - jsonText);
-					char *jsonPtr = (char *) malloc(jsonPtrSize);
-					
-					strncpy(jsonPtr, jsonText + 1, jsonPtrSize - 1);
-					
-					JSON *newJson = CreateJSON(JSON_STRING, jsonPtr);
-					InsertJSON(aux, newJson);
-				}
-				// FIX
-//				if(*jsonText == ']') break;
-			}
-		}
-	}
-	return aux;
+void test3() {
+	TokenTree *tree = CreateTokenTree();
+
+	Token *array0 = CreateToken("array0", TOKEN_TYPE_ARRAY);
+	AppendToTokenTree(tree, array0);
+
+	Token *array1 = CreateToken("array1", TOKEN_TYPE_ARRAY);
+	AppendTokenToArray(array0, array1);
+
+	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
+	AppendTokenToDictionary(dict0, CreateToken("key1", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("pair1", TOKEN_TYPE_STRING));
+	AppendTokenToArray(array1, dict0);
+
+	Token *dict1 = CreateToken("dict1", TOKEN_TYPE_DICTIONARY);
+	AppendTokenToDictionary(dict1, CreateToken("key2", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict1, CreateToken("pair2", TOKEN_TYPE_STRING));
+	AppendTokenToArray(array1, dict1);
+
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
+}
+
+void test4() {
+	TokenTree *tree = CreateTokenTree();
+
+	Token *array0 = CreateToken("array0", TOKEN_TYPE_ARRAY);
+	AppendToTokenTree(tree, array0);
+
+	Token *shines = CreateToken("Shine on you crazy diamond", TOKEN_TYPE_STRING);
+	AppendTokenToArray(array0, shines);
+
+	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
+	AppendTokenToArray(array0, dict0);
+
+	AppendTokenToDictionary(dict0, CreateToken("description", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("On the turning away", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("price", TOKEN_TYPE_STRING));
+	AppendTokenToDictionary(dict0, CreateToken("9.90", TOKEN_TYPE_NUMBER));
+
+	Token *wish = CreateToken("Wish you were here", TOKEN_TYPE_STRING);
+	AppendTokenToArray(array0, wish);
 	
+	Token *key = CreateToken("my_array", TOKEN_TYPE_STRING);
+	AppendTokenToDictionary(dict0, key);
+	Token *array1 = CreateToken("array1", TOKEN_TYPE_ARRAY);
+	AppendTokenToDictionary(dict0, array1);
+	
+	Token *gilmour = CreateToken("David Gilmour", TOKEN_TYPE_STRING);
+	AppendTokenToArray(array1, gilmour);
+	
+	Token *waters = CreateToken("Roger Waters", TOKEN_TYPE_STRING);
+	AppendTokenToArray(array1, waters);
+
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
+}
+
+void test5() {
+	TokenTree *tree = CreateTokenTree();
+	
+	Token *dict0 = CreateToken("dict0", TOKEN_TYPE_DICTIONARY);
+	AppendToTokenTree(tree, dict0);
+	
+	Dictionary_AppendString(dict0, "description", "candy bar");
+	Dictionary_AppendNumber(dict0, "price", 4.99);
+	
+	DumpTokenTree(tree);
+	SerializeTokenTree(tree);
 }
 
 int main() {
-	char jsonText[] = "[ 'julia', 'piton' ]";
-	printf("JSON text = %s\n", jsonText);
-	JSON *json = ReadJSON(jsonText);
-	for(JSON *j = json; j; j = j->next) {
-		static char *types[] = {
-			"Root", "String", "Array"
-		};
-		printf("Entry %p -> %s = '%s'\n",
-			j, types[j->type], j->ptr ? (char *) j->ptr : "");
-	}
+	test4();
 	return 0;
 }
